@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lemon Clicker 🍋</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #182016;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+header {
+  background: #10150e;
+  padding: 20px;
+  font-size: 25px;
+  font-weight: bold;
+  color: #ffdf38;
+}
+.container {
+  max-width: 650px;
+  margin: 30px auto;
+  padding: 15px;
+}
+.stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+}
+.stat {
+  background: #283321;
+  padding: 15px;
+  border-radius: 12px;
+  flex: 1;
+}
+.stat p { color: #cbd5b5; margin: 0; }
+.stat h2 { color: #ffdf38; }
+#lemon {
+  background: none;
+  border: none;
+  font-size: 150px;
+  cursor: pointer;
+  transition: transform .1s;
+  margin: 25px;
+  touch-action: manipulation;
+}
+#lemon:active { transform: scale(.85); }
+.shop {
+  background: #283321;
+  padding: 20px;
+  border-radius: 15px;
+}
+.upgrade {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #526044;
+  padding: 12px 0;
+}
+button.buy {
+  background: #ffdf38;
+  color: #24200a;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.extra {
+  margin: 20px;
+  padding: 12px;
+  background: #35432b;
+  color: white;
+  border: 1px solid #647653;
+  border-radius: 8px;
+}
+</style>
+</head>
+<body>
+
+<header>🍋 LEMON CLICKER</header>
+
+<div class="container">
+
+<div class="stats">
+  <div class="stat">
+    <p>🍋 Lemons</p>
+    <h2 id="lemons">0</h2>
+  </div>
+  <div class="stat">
+    <p>⚡ Per Click</p>
+    <h2 id="clickPower">1</h2>
+  </div>
+  <div class="stat">
+    <p>🤖 Per Second</p>
+    <h2 id="perSecond">0</h2>
+  </div>
+</div>
+
+<h2>Click the lemon!</h2>
+
+<button id="lemon" onclick="clickLemon()">🍋</button>
+
+<div class="shop">
+<h2>🛒 UPGRADES</h2>
+
+<div class="upgrade">
+  <span>👆 Stronger Finger (+1 click)</span>
+  <button class="buy" id="finger" onclick="buyUpgrade('finger')">25 🍋</button>
+</div>
+
+<div class="upgrade">
+  <span>🧑‍🌾 Farmer (+1/sec)</span>
+  <button class="buy" id="farmer" onclick="buyUpgrade('farmer')">75 🍋</button>
+</div>
+
+<div class="upgrade">
+  <span>🌳 Lemon Tree (+5/sec)</span>
+  <button class="buy" id="tree" onclick="buyUpgrade('tree')">300 🍋</button>
+</div>
+
+<div class="upgrade">
+  <span>🏭 Lemon Factory (+25/sec)</span>
+  <button class="buy" id="factory" onclick="buyUpgrade('factory')">1500 🍋</button>
+</div>
+</div>
+
+<button class="extra" onclick="saveGame()">💾 SAVE GAME</button>
+<button class="extra" onclick="resetGame()">🔄 RESET</button>
+
+</div>
+
+<script>
+let lemons = 0;
+let clickPower = 1;
+let perSecond = 0;
+
+let upgrades = {
+  finger: {cost:25, click:1, second:0},
+  farmer: {cost:75, click:0, second:1},
+  tree: {cost:300, click:0, second:5},
+  factory: {cost:1500, click:0, second:25}
+};
+
+function clickLemon() {
+  lemons += clickPower;
+  update();
+}
+
+function buyUpgrade(name) {
+  let u = upgrades[name];
+
+  if (lemons >= u.cost) {
+    lemons -= u.cost;
+    clickPower += u.click;
+    perSecond += u.second;
+    u.cost = Math.ceil(u.cost * 1.55);
+    update();
+  }
+}
+
+function update() {
+  document.getElementById("lemons").textContent = Math.floor(lemons).toLocaleString();
+  document.getElementById("clickPower").textContent = clickPower;
+  document.getElementById("perSecond").textContent = perSecond;
+
+  for (let name in upgrades) {
+    let button = document.getElementById(name);
+    button.textContent = upgrades[name].cost.toLocaleString() + " 🍋";
+    button.disabled = lemons < upgrades[name].cost;
+  }
+}
+
+function saveGame() {
+  localStorage.setItem("lemonSave", JSON.stringify({
+    lemons, clickPower, perSecond, upgrades
+  }));
+  alert("Game saved! 🍋");
+}
+
+function loadGame() {
+  try {
+    let save = JSON.parse(localStorage.getItem("lemonSave"));
+    if (save && Number.isFinite(save.lemons) &&
+        Number.isFinite(save.clickPower) &&
+        Number.isFinite(save.perSecond) && save.upgrades) {
+      lemons = Math.max(0, save.lemons);
+      clickPower = Math.max(1, save.clickPower);
+      perSecond = Math.max(0, save.perSecond);
+
+      for (let name in upgrades) {
+        if (save.upgrades[name] &&
+            Number.isFinite(save.upgrades[name].cost)) {
+          upgrades[name].cost = save.upgrades[name].cost;
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+function resetGame() {
+  if (confirm("Reset your lemon progress?")) {
+    lemons = 0;
+    clickPower = 1;
+    perSecond = 0;
+    upgrades.finger.cost = 25;
+    upgrades.farmer.cost = 75;
+    upgrades.tree.cost = 300;
+    upgrades.factory.cost = 1500;
+    localStorage.removeItem("lemonSave");
+    update();
+  }
+}
+
+setInterval(() => {
+  lemons += perSecond;
+  update();
+}, 1000);
+
+loadGame();
+update();
+</script>
+
+</body>
+</html>
